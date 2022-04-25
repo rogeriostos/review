@@ -1,0 +1,43 @@
+version: '3.1'
+
+networks:
+  review-net:
+    driver: bridge
+volumes:
+  reviewdb:
+
+services:
+  reviewdb:
+    image: postgres:14.2
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: "Pg@123"
+      POSTGRES_USER: "pguser"
+      POSTGRES_DB: "pguser"
+    volumes:
+      - reviewdb:/var/lib/postgresql/data
+    networks:
+      - review-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pguser"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    networks:
+      - review-net
+  app:
+    image: rogeriostos/review:v1
+    restart: always
+    ports:
+      - 80:80
+    networks:
+      - review-net
+    depends_on:
+      - reviewdb
+    environment:
+      ConnectionStrings__MyConnection: "Host=reviewdb;Database=pguser;Username=pguser;Password=Pg@123;"
